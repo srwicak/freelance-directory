@@ -24,7 +24,6 @@ export default function RegisterPage() {
     const [copied, setCopied] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
-        whatsapp: '',
         field: '',
         province: '',
         city: '',
@@ -63,18 +62,27 @@ export default function RegisterPage() {
     });
 
     const canGoNext = () => {
-        if (step === 1) return formData.name.trim() !== '' && formData.whatsapp.trim() !== '';
+        if (step === 1) return formData.name.trim() !== '' && formData.linkedin.trim() !== '';
         if (step === 2) return formData.province !== '' && formData.city !== '' && formData.field !== '';
         return true;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // If not last step, treat Enter key as "Next"
+        if (step < totalSteps) {
+            if (canGoNext()) {
+                setStep(step + 1);
+            }
+            return;
+        }
+
         setLoading(true);
 
         try {
-            if (!formData.name || !formData.whatsapp || !formData.field || !formData.province || !formData.city) {
-                alert("Mohon lengkapi Nama, WhatsApp, Bidang, dan Lokasi.");
+            if (!formData.name || !formData.linkedin || !formData.field || !formData.province || !formData.city) {
+                alert("Mohon lengkapi Nama, LinkedIn, Bidang, dan Lokasi.");
                 setLoading(false);
                 return;
             }
@@ -250,20 +258,20 @@ export default function RegisterPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="wa" className="text-sm font-semibold">
-                                                No. WhatsApp <span className="text-red-500">*</span>
+                                            <Label htmlFor="linkedin" className="text-sm font-semibold">
+                                                Link LinkedIn <span className="text-red-500">*</span>
                                             </Label>
                                             <Input
-                                                id="wa"
-                                                placeholder="Contoh: 62812345678"
-                                                type="tel"
-                                                value={formData.whatsapp}
-                                                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value.replace(/\D/g, '') })}
+                                                id="linkedin"
+                                                placeholder="Contoh: https://linkedin.com/in/username"
+                                                type="url"
+                                                value={formData.linkedin}
+                                                onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
                                                 className="h-12 rounded-xl text-base"
                                                 required
                                             />
                                             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                                💡 Gunakan format internasional tanpa tanda + (62...)
+                                                💡 Masukkan link profil LinkedIn lengkap Anda
                                             </p>
                                         </div>
                                     </motion.div>
@@ -417,19 +425,7 @@ export default function RegisterPage() {
                                             />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="linkedin" className="text-sm font-semibold">
-                                                Link LinkedIn <span className="text-xs text-muted-foreground font-normal">(Opsional)</span>
-                                            </Label>
-                                            <Input
-                                                id="linkedin"
-                                                placeholder="https://linkedin.com/in/..."
-                                                type="url"
-                                                value={formData.linkedin}
-                                                onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                                                className="h-12 rounded-xl text-base"
-                                            />
-                                        </div>
+
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -449,15 +445,20 @@ export default function RegisterPage() {
 
                             {step < totalSteps ? (
                                 <Button
+                                    key="btn-next"
                                     type="button"
                                     className="flex-1 h-12 rounded-xl text-base font-semibold bg-gradient-primary hover:opacity-90"
                                     disabled={!canGoNext()}
-                                    onClick={() => setStep(step + 1)}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setStep(step + 1);
+                                    }}
                                 >
                                     Lanjut
                                 </Button>
                             ) : (
                                 <Button
+                                    key="btn-submit"
                                     type="submit"
                                     className="flex-1 h-12 rounded-xl text-base font-semibold bg-gradient-primary hover:opacity-90"
                                     disabled={loading}

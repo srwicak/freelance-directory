@@ -13,13 +13,12 @@ import Link from 'next/link';
 interface Freelancer {
     id: string;
     name: string;
-    whatsapp: string;
     field: string;
     province?: string;
     city?: string;
     details: string;
     portfolio?: string;
-    linkedin?: string;
+    linkedin: string;
     createdAt?: any;
 }
 
@@ -248,7 +247,7 @@ export default function DirectoryPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: Math.min(i * 0.05, 0.4) }}
                         >
-                            <Card className="relative overflow-hidden card-hover border-border/60 bg-card rounded-2xl">
+                            <Card className="relative overflow-hidden card-hover border-border bg-card rounded-2xl shadow-md shadow-black/5">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-start gap-3">
                                         {/* Avatar */}
@@ -290,32 +289,21 @@ export default function DirectoryPage() {
 
                                             <div className="flex flex-col gap-2 pt-1">
                                                 <a
-                                                    href={`https://wa.me/${user.whatsapp.replace(/[^0-9]/g, '')}`}
+                                                    href={user.linkedin}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="btn-whatsapp inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-sm font-semibold"
+                                                    className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-sm font-semibold text-white bg-[#0077b5] hover:bg-[#006097] transition-colors"
                                                 >
-                                                    <MessageCircle className="h-4 w-4" />
-                                                    Chat WhatsApp
+                                                    <span className="font-bold text-lg leading-none">in</span>
+                                                    Connect on LinkedIn
                                                 </a>
 
-                                                {(user.portfolio || user.linkedin) && (
-                                                    <div className="flex gap-2">
-                                                        {user.portfolio && (
-                                                            <Button asChild size="sm" variant="ghost" className="flex-1 h-9 rounded-lg text-xs">
-                                                                <a href={user.portfolio} target="_blank" rel="noopener noreferrer">
-                                                                    <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Portfolio
-                                                                </a>
-                                                            </Button>
-                                                        )}
-                                                        {user.linkedin && (
-                                                            <Button asChild size="sm" variant="ghost" className="flex-1 h-9 rounded-lg text-xs">
-                                                                <a href={user.linkedin} target="_blank" rel="noopener noreferrer">
-                                                                    <span className="mr-1.5 font-bold text-blue-600 text-xs">in</span> LinkedIn
-                                                                </a>
-                                                            </Button>
-                                                        )}
-                                                    </div>
+                                                {user.portfolio && (
+                                                    <Button asChild size="sm" variant="outline" className="h-10 rounded-xl text-xs w-full">
+                                                        <a href={user.portfolio} target="_blank" rel="noopener noreferrer">
+                                                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Lihat Portfolio
+                                                        </a>
+                                                    </Button>
                                                 )}
                                             </div>
                                         </motion.div>

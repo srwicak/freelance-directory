@@ -22,22 +22,22 @@ const features = [
     icon: Database,
     title: "Terdata Rapi",
     description: "Direktori terstruktur berdasarkan bidang keahlian dan lokasi memudahkan pencarian talent.",
-    color: "from-teal-500/20 to-cyan-500/20",
-    iconColor: "text-teal-600",
+    color: "from-teal-500/30 to-cyan-500/30",
+    iconColor: "text-teal-700",
   },
   {
     icon: Shield,
     title: "Privasi Terjaga",
     description: "Detail kontak hanya bisa dilihat oleh sesama anggota terdaftar dalam komunitas.",
-    color: "from-blue-500/20 to-indigo-500/20",
-    iconColor: "text-blue-600",
+    color: "from-blue-500/30 to-indigo-500/30",
+    iconColor: "text-blue-700",
   },
   {
     icon: KeyRound,
     title: "Tanpa Login Rumit",
     description: "Cukup simpan ID unik Anda. Tidak perlu password atau email untuk akses kapan saja.",
-    color: "from-amber-500/20 to-orange-500/20",
-    iconColor: "text-amber-600",
+    color: "from-amber-500/30 to-orange-500/30",
+    iconColor: "text-amber-700",
   },
 ]
 
@@ -81,12 +81,19 @@ export default function Home() {
               Gabung Sekarang
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="h-14 px-8 text-base font-semibold rounded-xl border-2">
+          <Button asChild variant="outline" size="lg" className="h-14 px-8 text-base font-semibold rounded-xl border-2 border-foreground/20 hover:border-foreground/40">
             <Link href="/directory">
               <Search className="mr-2.5 h-5 w-5" />
               Cari Freelancer
             </Link>
           </Button>
+        </motion.div>
+
+        <motion.div variants={fadeInUp} className="mt-6">
+          <Link href="/edit-profile" className="text-sm text-foreground/60 hover:text-primary transition-colors flex items-center justify-center gap-2 px-4 py-2 rounded-lg hover:bg-muted/50">
+            <Users className="w-4 h-4" /> {/* UserCog not imported, reusing Users or importing UserCog? Let's fix import */}
+            <span>Sudah terdaftar? <span className="underline decoration-dotted underline-offset-4">Edit Profil Anda</span></span>
+          </Link>
         </motion.div>
 
         {/* Stats Row */}
@@ -98,12 +105,12 @@ export default function Home() {
             <div className="text-2xl md:text-3xl font-extrabold text-foreground">20+</div>
             <div className="text-sm text-muted-foreground mt-0.5">Bidang Keahlian</div>
           </div>
-          <div className="w-px h-10 bg-border"></div>
+          <div className="w-px h-10 bg-foreground/15"></div>
           <div>
             <div className="text-2xl md:text-3xl font-extrabold text-foreground">38</div>
             <div className="text-sm text-muted-foreground mt-0.5">Provinsi</div>
           </div>
-          <div className="w-px h-10 bg-border"></div>
+          <div className="w-px h-10 bg-foreground/15"></div>
           <div>
             <div className="text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-1">
               <Users className="h-6 w-6 text-primary" />
@@ -135,7 +142,7 @@ export default function Home() {
             <motion.div
               key={feature.title}
               variants={fadeInUp}
-              className="group relative p-7 rounded-2xl bg-card border border-border/60 shadow-sm card-hover"
+              className="group relative p-7 rounded-2xl bg-card border border-border shadow-md shadow-black/5 card-hover"
             >
               <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} mb-5`}>
                 <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
