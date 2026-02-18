@@ -1,16 +1,9 @@
 {
     // wrangler.jsonc
-    "name": "freelance-directory",
+    "name": "freelancer-directory",
     "compatibility_date": "2024-09-23",
     "compatibility_flags": [
         "nodejs_compat"
     ],
-    "main": ".vercel/output/static/_worker.js/index.js",
-    "assets": {
-        "binding": "ASSETS",
-        "directory": ".vercel/output/static"
-    },
-    "build": {
-        "command": "npm run pages:build"
-    }
+    "pages_build_output_dir": ".vercel/output/static"
 }
