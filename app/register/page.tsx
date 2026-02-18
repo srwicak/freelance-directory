@@ -122,9 +122,9 @@ export default function RegisterPage() {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="w-full max-w-md"
                 >
-                    <Card className="border-2 border-emerald-200 dark:border-emerald-800 overflow-hidden">
+                    <Card className="border-2 border-primary/20 overflow-hidden">
                         {/* Success header with gradient */}
-                        <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-6 text-center text-white">
+                        <div className="bg-gradient-primary p-6 text-center text-primary-foreground">
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
@@ -133,7 +133,7 @@ export default function RegisterPage() {
                                 <PartyPopper className="h-12 w-12 mx-auto mb-3" />
                             </motion.div>
                             <h2 className="text-2xl font-bold">Pendaftaran Berhasil! 🎉</h2>
-                            <p className="text-emerald-100 mt-2 text-sm">
+                            <p className="text-primary-foreground/90 mt-2 text-sm">
                                 Profil Anda sudah aktif di direktori
                             </p>
                         </div>
@@ -153,20 +153,20 @@ export default function RegisterPage() {
                                         size="icon"
                                         variant={copied ? "default" : "outline"}
                                         onClick={copyToClipboard}
-                                        className={`h-14 w-14 rounded-xl shrink-0 transition-all ${copied ? 'bg-emerald-500 hover:bg-emerald-500 text-white' : ''}`}
+                                        className={`h-14 w-14 rounded-xl shrink-0 transition-all ${copied ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}`}
                                     >
                                         {copied ? <CheckCircle2 className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                                     </Button>
                                 </div>
                             </div>
 
-                            <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
+                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
                                 <span className="text-lg">⚠️</span>
                                 <div>
-                                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                                    <p className="text-sm font-semibold text-gray-800">
                                         Jangan Sampai Hilang!
                                     </p>
-                                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                                    <p className="text-xs text-red-700 mt-1">
                                         ID ini satu-satunya cara Anda mengakses direktori. Kami tidak menyimpan email untuk reset.
                                     </p>
                                 </div>
@@ -174,7 +174,7 @@ export default function RegisterPage() {
                         </CardContent>
 
                         <CardFooter className="flex flex-col gap-3 p-6 pt-0">
-                            <Button asChild className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-primary hover:opacity-90">
+                            <Button asChild className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-primary hover:opacity-90 transition-opacity">
                                 <Link href="/directory">Lihat Direktori</Link>
                             </Button>
                             <Button asChild variant="ghost" className="w-full h-12 rounded-xl">

@@ -22,22 +22,22 @@ const features = [
     icon: Database,
     title: "Terdata Rapi",
     description: "Direktori terstruktur berdasarkan bidang keahlian dan lokasi memudahkan pencarian talent.",
-    color: "from-teal-500/30 to-cyan-500/30",
-    iconColor: "text-teal-700",
+    color: "from-indigo-500/20 to-violet-500/20",
+    iconColor: "text-indigo-600",
   },
   {
     icon: Shield,
     title: "Privasi Terjaga",
     description: "Detail kontak hanya bisa dilihat oleh sesama anggota terdaftar dalam komunitas.",
-    color: "from-blue-500/30 to-indigo-500/30",
-    iconColor: "text-blue-700",
+    color: "from-sky-500/20 to-blue-500/20",
+    iconColor: "text-blue-600",
   },
   {
     icon: KeyRound,
     title: "Tanpa Login Rumit",
     description: "Cukup simpan ID unik Anda. Tidak perlu password atau email untuk akses kapan saja.",
-    color: "from-amber-500/30 to-orange-500/30",
-    iconColor: "text-amber-700",
+    color: "from-amber-500/20 to-orange-500/20",
+    iconColor: "text-orange-600",
   },
 ]
 

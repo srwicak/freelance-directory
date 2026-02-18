@@ -48,14 +48,14 @@ export default function DirectoryPage() {
     // Generate initials avatar color based on name
     const getAvatarColor = (name: string) => {
         const colors = [
-            'from-teal-400 to-cyan-500',
-            'from-blue-400 to-indigo-500',
-            'from-purple-400 to-pink-500',
+            'from-cyan-500 to-blue-500',
+            'from-blue-500 to-indigo-500',
+            'from-violet-500 to-fuchsia-500',
             'from-amber-400 to-orange-500',
-            'from-emerald-400 to-teal-500',
+            'from-indigo-400 to-cyan-500',
             'from-rose-400 to-red-500',
-            'from-fuchsia-400 to-purple-500',
-            'from-sky-400 to-blue-500',
+            'from-fuchsia-500 to-purple-600',
+            'from-sky-400 to-blue-600',
         ];
         const index = name.charCodeAt(0) % colors.length;
         return colors[index];
@@ -153,15 +153,15 @@ export default function DirectoryPage() {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-4 py-2.5 rounded-xl"
+                            className="flex items-center gap-3 bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-xl"
                         >
-                            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                            <div className="flex items-center gap-2 text-primary">
                                 <ShieldCheck className="h-4 w-4" />
                                 <span className="text-sm font-semibold">Akses Aktif</span>
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 transition-colors ml-1 min-h-0"
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors ml-1 min-h-0"
                             >
                                 <LogOut className="h-3 w-3" />
                                 Keluar
