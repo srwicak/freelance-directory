@@ -1,6 +1,6 @@
 {
     // wrangler.jsonc
-    "name": "freelancer-directory",
+    "name": "freelance-directory",
     "compatibility_date": "2024-09-23",
     "compatibility_flags": [
         "nodejs_compat"
