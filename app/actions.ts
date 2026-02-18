@@ -42,7 +42,10 @@ export async function getFreelancers() {
         return { success: true, data };
     } catch (error) {
         console.error('Failed to fetch freelancers:', error);
-        return { success: false, error: 'Gagal mengambil data freelancer.' };
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Gagal mengambil data freelancer.'
+        };
     }
 }
 

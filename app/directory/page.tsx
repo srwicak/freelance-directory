@@ -39,6 +39,7 @@ export default function DirectoryPage() {
     const [tempId, setTempId] = useState('');
     const [accessError, setAccessError] = useState('');
     const [verifying, setVerifying] = useState(false);
+    const [fetchError, setFetchError] = useState<string | null>(null);
 
     const getLocalizedField = (field: string) => {
         return CATEGORY_MAPPING[field] || field;
@@ -70,9 +71,12 @@ export default function DirectoryPage() {
                 const result = await getFreelancers();
                 if (result.success && result.data) {
                     setUsers(result.data as Freelancer[]);
+                } else if (!result.success && result.error) {
+                    setFetchError(result.error);
                 }
             } catch (error) {
                 console.error("Error fetching users:", error);
+                setFetchError("Gagal terhubung ke database.");
             } finally {
                 setLoading(false);
             }
@@ -344,9 +348,17 @@ export default function DirectoryPage() {
                             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
                                 <Search className="h-7 w-7 text-muted-foreground" />
                             </div>
-                            <h3 className="font-semibold text-lg mb-1">Tidak Ditemukan</h3>
-                            <p className="text-muted-foreground text-sm">
-                                Coba ubah kata kunci pencarian atau filter bidang.
+                            <h3 className="font-semibold text-lg mb-1">
+                                {fetchError ? 'Gagal Memuat Data' : 'Tidak Ditemukan'}
+                            </h3>
+                            <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                                {fetchError ? (
+                                    <span className="text-red-500 font-mono text-xs block mt-2 bg-red-50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-900 break-all">
+                                        Error: {fetchError}
+                                    </span>
+                                ) : (
+                                    "Coba ubah kata kunci pencarian atau filter bidang."
+                                )}
                             </p>
                         </div>
                     )}
