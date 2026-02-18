@@ -13,10 +13,19 @@ const getClient = () => {
         console.warn('TURSO_DATABASE_URL is not set, using "file:local.db"');
     }
 
-    return createClient({
-        url: url || 'file:local.db',
-        authToken,
-    });
+    if (url?.startsWith('libsql://') && !authToken) {
+        throw new Error('TURSO_AUTH_TOKEN is not set (required for remote connection)');
+    }
+
+    try {
+        return createClient({
+            url: url || 'file:local.db',
+            authToken,
+        });
+    } catch (e) {
+        console.error('Failed to create LibSQL client:', e);
+        throw new Error(`Database client creation failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
 };
 
 export const getDb = () => {
