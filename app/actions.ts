@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { users } from '@/db/schema';
 import { revalidatePath } from 'next/cache';
 import { desc, eq } from 'drizzle-orm';
@@ -17,6 +17,7 @@ export async function registerUser(formData: {
 }) {
     try {
         const userId = nanoid(10);
+        const db = getDb();
 
         await db.insert(users).values({
             id: userId,
@@ -34,6 +35,7 @@ export async function registerUser(formData: {
 
 export async function getFreelancers() {
     try {
+        const db = getDb();
         const data = await db.query.users.findMany({
             orderBy: [desc(users.createdAt)],
         });
@@ -46,6 +48,7 @@ export async function getFreelancers() {
 
 export async function getUserById(id: string) {
     try {
+        const db = getDb();
         const user = await db.query.users.findFirst({
             where: eq(users.id, id),
         });
@@ -71,15 +74,15 @@ export async function updateUser(id: string, formData: {
     linkedin?: string;
 }) {
     try {
+        const db = getDb();
         await db.update(users)
             .set({
                 ...formData,
-                // Ensure field naming matches schema if needed, schema uses same names so it's fine
             })
             .where(eq(users.id, id));
 
         revalidatePath('/directory');
-        revalidatePath(`/edit-profile`); // If we have a dynamic route later
+        revalidatePath(`/edit-profile`);
 
         return { success: true };
     } catch (error) {
