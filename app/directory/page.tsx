@@ -71,12 +71,13 @@ export default function DirectoryPage() {
                 const result = await getFreelancers();
                 if (result.success && result.data) {
                     setUsers(result.data as Freelancer[]);
-                } else if (!result.success && result.error) {
-                    setFetchError(result.error);
+                } else if (!result.success) {
+                    setFetchError(result.error || 'Terjadi kesalahan yang tidak diketahui');
                 }
             } catch (error) {
                 console.error("Error fetching users:", error);
-                setFetchError("Gagal terhubung ke database.");
+                // Show the actual error message to help debug "Gagal terhubung"
+                setFetchError(error instanceof Error ? error.message : String(error));
             } finally {
                 setLoading(false);
             }
