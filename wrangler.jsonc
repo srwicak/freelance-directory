@@ -8,5 +8,8 @@
     "assets": {
         "binding": "ASSETS",
         "directory": ".vercel/output/static"
+    },
+    "build": {
+        "command": "npm run pages:build"
     }
 }
