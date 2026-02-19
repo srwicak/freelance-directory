@@ -43,9 +43,22 @@ export async function getFreelancers() {
         return { success: true, data };
     } catch (error) {
         console.error('Failed to fetch freelancers:', error);
+
+        // DEBUG: Expose env var status to UI
+        const url = process.env.TURSO_DATABASE_URL;
+        const debugInfo = `
+        [DEBUG INFO]
+        Runtime: ${process.env.NEXT_RUNTIME || 'unknown'}
+        URL Configured: ${!!url}
+        URL Prefix: ${url ? url.substring(0, 10) + '...' : 'N/A'}
+        URL Length: ${url ? url.length : 0}
+        Token Configured: ${!!process.env.TURSO_AUTH_TOKEN}
+        Error: ${error instanceof Error ? error.message : String(error)}
+        `;
+
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Gagal mengambil data freelancer.'
+            error: `Gagal DB. ${debugInfo}`
         };
     }
 }
