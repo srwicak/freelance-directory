@@ -47,7 +47,13 @@ export async function getFreelancers() {
             connectionTest = `Failed: ${e instanceof Error ? e.message : String(e)}`;
         }
 
-        const data = await db.select().from(users).orderBy(desc(users.createdAt));
+        // Check tables via raw SQL
+        const tables = await db.run(sql`SELECT name FROM sqlite_master WHERE type='table'`);
+        console.log('[DB] Tables found:', tables.rows.map((r: any) => r.name));
+
+        const data = await db.select().from(users).limit(5); // Simplify query temporarily
+        console.log('[DB] Data fetched successfully:', data.length, 'records');
+
         return { success: true, data };
     } catch (error: any) {
         console.error('Failed to fetch freelancers:', error);

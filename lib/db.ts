@@ -32,10 +32,12 @@ const getClient = () => {
     // Force HTTPS for web client (fetch-based) in Edge environment
     const finalUrl = url.replace('libsql://', 'https://');
 
+    console.log(`[DB] Initializing client with URL: ${finalUrl.replace(/:[^:@]*@/, ':***@')}`);
+
     return createClient({
         url: finalUrl,
         authToken,
-        fetch: fetch, // Explicitly pass the global fetch for Cloudflare compatibility
+        // fetch: fetch, // Let the client detect the global fetch
     });
 };
 
