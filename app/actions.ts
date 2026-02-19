@@ -4,7 +4,7 @@
 import { getDb } from '@/lib/db';
 import { users } from '@/db/schema';
 import { revalidatePath } from 'next/cache';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 export async function registerUser(formData: {
@@ -37,6 +37,16 @@ export async function registerUser(formData: {
 export async function getFreelancers() {
     try {
         const db = getDb();
+
+        // DEBUG: Test Raw Connection
+        let connectionTest = 'Not tested';
+        try {
+            await db.run(sql`SELECT 1`);
+            connectionTest = 'Success (SELECT 1 passed)';
+        } catch (e) {
+            connectionTest = `Failed: ${e instanceof Error ? e.message : String(e)}`;
+        }
+
         const data = await db.query.users.findMany({
             orderBy: [desc(users.createdAt)],
         });
@@ -44,16 +54,14 @@ export async function getFreelancers() {
     } catch (error) {
         console.error('Failed to fetch freelancers:', error);
 
-        // DEBUG: Expose env var status to UI
         const url = process.env.TURSO_DATABASE_URL;
+
         const debugInfo = `
         [DEBUG INFO]
         Runtime: ${process.env.NEXT_RUNTIME || 'unknown'}
         URL Configured: ${!!url}
         URL Prefix: ${url ? url.substring(0, 10) + '...' : 'N/A'}
-        URL Length: ${url ? url.length : 0}
-        Token Configured: ${!!process.env.TURSO_AUTH_TOKEN}
-        Error: ${error instanceof Error ? error.message : String(error)}
+        Error Message: ${error instanceof Error ? error.message : String(error)}
         `;
 
         return {
