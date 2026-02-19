@@ -1,8 +1,12 @@
 'use server';
 
 import { tursoQuery, tursoExecute } from '@/lib/db';
+import { encrypt, decrypt, encryptFields, decryptFields } from '@/lib/encryption';
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid';
+
+// Fields that should be encrypted in the database
+const ENCRYPTED_FIELDS = ['name', 'details', 'portfolio', 'linkedin'] as const;
 
 export async function registerUser(formData: {
     name: string;
@@ -17,9 +21,12 @@ export async function registerUser(formData: {
         const userId = nanoid(10);
         const now = Math.floor(Date.now() / 1000);
 
+        // Encrypt sensitive fields before storing
+        const encryptedData = await encryptFields(formData, [...ENCRYPTED_FIELDS]);
+
         await tursoExecute(
             'INSERT INTO freelancers (id, name, field, province, city, details, portfolio, linkedin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [userId, formData.name, formData.field, formData.province, formData.city, formData.details, formData.portfolio, formData.linkedin, now]
+            [userId, encryptedData.name, encryptedData.field, encryptedData.province, encryptedData.city, encryptedData.details, encryptedData.portfolio, encryptedData.linkedin, now]
         );
 
         revalidatePath('/directory');
@@ -37,51 +44,95 @@ export async function getFreelancers(
     fieldFilter: string = ''
 ) {
     try {
-        const offset = (page - 1) * limit;
+        const hasSearch = search.trim().length > 0;
+        const searchLower = search.trim().toLowerCase();
 
-        // Build WHERE clauses
-        const conditions: string[] = [];
-        const countArgs: any[] = [];
-        const queryArgs: any[] = [];
-
-        if (search.trim()) {
-            const searchPattern = `%${search.trim()}%`;
-            conditions.push('(name LIKE ? OR field LIKE ? OR province LIKE ? OR city LIKE ? OR details LIKE ?)');
-            // Args for both count and query
-            const searchArgs = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
-            countArgs.push(...searchArgs);
-            queryArgs.push(...searchArgs);
-        }
+        // --- DB-level filter: only non-encrypted fields (fieldFilter) ---
+        const dbConditions: string[] = [];
+        const dbArgs: any[] = [];
 
         if (fieldFilter.trim()) {
-            conditions.push('field = ?');
-            countArgs.push(fieldFilter.trim());
-            queryArgs.push(fieldFilter.trim());
+            dbConditions.push('field = ?');
+            dbArgs.push(fieldFilter.trim());
         }
 
-        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+        const whereClause = dbConditions.length > 0 ? `WHERE ${dbConditions.join(' AND ')}` : '';
 
-        // Get total count (with filters)
-        const countResult = await tursoQuery(
-            `SELECT count(*) as total FROM freelancers ${whereClause}`,
-            countArgs
-        );
-        const totalCount = parseInt(countResult[0]?.total || '0', 10);
+        // If there's a text search, we need to fetch ALL rows (filtered by fieldFilter at DB level),
+        // decrypt them, then filter by search term in application code.
+        // If no text search, we can paginate at DB level for efficiency.
 
-        // Get paginated + filtered data
-        queryArgs.push(limit, offset);
-        const data = await tursoQuery(
-            `SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-            queryArgs
-        );
+        if (hasSearch) {
+            // Fetch all rows (with fieldFilter applied at DB level)
+            const allData = await tursoQuery(
+                `SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers ${whereClause} ORDER BY created_at DESC`,
+                dbArgs
+            );
 
-        return {
-            success: true,
-            data,
-            totalCount,
-            hasMore: offset + data.length < totalCount,
-            page,
-        };
+            // Decrypt all rows
+            const decryptedAll = await Promise.all(
+                allData.map(row => decryptFields(row, [...ENCRYPTED_FIELDS]))
+            );
+
+            // Application-level search across ALL fields (including encrypted ones like name)
+            const filtered = decryptedAll.filter(row => {
+                const name = (row.name || '').toLowerCase();
+                const field = (row.field || '').toLowerCase();
+                const province = (row.province || '').toLowerCase();
+                const city = (row.city || '').toLowerCase();
+                const details = (row.details || '').toLowerCase();
+
+                return (
+                    name.includes(searchLower) ||
+                    field.includes(searchLower) ||
+                    province.includes(searchLower) ||
+                    city.includes(searchLower) ||
+                    details.includes(searchLower)
+                );
+            });
+
+            // Apply pagination on filtered results
+            const offset = (page - 1) * limit;
+            const paginated = filtered.slice(offset, offset + limit);
+
+            return {
+                success: true,
+                data: paginated,
+                totalCount: filtered.length,
+                hasMore: offset + paginated.length < filtered.length,
+                page,
+            };
+        } else {
+            // No text search — paginate at DB level (more efficient)
+            const offset = (page - 1) * limit;
+
+            // Get total count
+            const countResult = await tursoQuery(
+                `SELECT count(*) as total FROM freelancers ${whereClause}`,
+                dbArgs
+            );
+            const totalCount = parseInt(countResult[0]?.total || '0', 10);
+
+            // Get paginated data
+            const pageArgs = [...dbArgs, limit, offset];
+            const data = await tursoQuery(
+                `SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+                pageArgs
+            );
+
+            // Decrypt sensitive fields
+            const decryptedData = await Promise.all(
+                data.map(row => decryptFields(row, [...ENCRYPTED_FIELDS]))
+            );
+
+            return {
+                success: true,
+                data: decryptedData,
+                totalCount,
+                hasMore: offset + data.length < totalCount,
+                page,
+            };
+        }
     } catch (error: any) {
         console.error('[DB] Failed to fetch freelancers:', error);
         return {
@@ -103,7 +154,10 @@ export async function getUserById(id: string) {
             return { success: false, error: 'User tidak ditemukan.' };
         }
 
-        return { success: true, data: rows[0] };
+        // Decrypt sensitive fields
+        const decryptedRow = await decryptFields(rows[0], [...ENCRYPTED_FIELDS]);
+
+        return { success: true, data: decryptedRow };
     } catch (error) {
         console.error('Failed to fetch user:', error);
         return { success: false, error: 'Gagal mengambil data user.' };
@@ -120,16 +174,19 @@ export async function updateUser(id: string, formData: {
     linkedin?: string;
 }) {
     try {
+        // Encrypt sensitive fields before updating
+        const encryptedData = await encryptFields(formData, [...ENCRYPTED_FIELDS]);
+
         const setClauses: string[] = [];
         const args: any[] = [];
 
-        if (formData.name !== undefined) { setClauses.push('name = ?'); args.push(formData.name); }
-        if (formData.field !== undefined) { setClauses.push('field = ?'); args.push(formData.field); }
-        if (formData.province !== undefined) { setClauses.push('province = ?'); args.push(formData.province); }
-        if (formData.city !== undefined) { setClauses.push('city = ?'); args.push(formData.city); }
-        if (formData.details !== undefined) { setClauses.push('details = ?'); args.push(formData.details); }
-        if (formData.portfolio !== undefined) { setClauses.push('portfolio = ?'); args.push(formData.portfolio); }
-        if (formData.linkedin !== undefined) { setClauses.push('linkedin = ?'); args.push(formData.linkedin); }
+        if (encryptedData.name !== undefined) { setClauses.push('name = ?'); args.push(encryptedData.name); }
+        if (encryptedData.field !== undefined) { setClauses.push('field = ?'); args.push(encryptedData.field); }
+        if (encryptedData.province !== undefined) { setClauses.push('province = ?'); args.push(encryptedData.province); }
+        if (encryptedData.city !== undefined) { setClauses.push('city = ?'); args.push(encryptedData.city); }
+        if (encryptedData.details !== undefined) { setClauses.push('details = ?'); args.push(encryptedData.details); }
+        if (encryptedData.portfolio !== undefined) { setClauses.push('portfolio = ?'); args.push(encryptedData.portfolio); }
+        if (encryptedData.linkedin !== undefined) { setClauses.push('linkedin = ?'); args.push(encryptedData.linkedin); }
 
         if (setClauses.length === 0) {
             return { success: false, error: 'Tidak ada data untuk diupdate.' };
