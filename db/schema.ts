@@ -1,18 +1,18 @@
 import { sqliteTable, text, integer, customType } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
-import { encrypt, decrypt } from '../lib/encryption';
+// import { encrypt, decrypt } from '../lib/encryption';
 
-const encryptedText = customType<{ data: string; driverData: string }>({
-    dataType() {
-        return 'text';
-    },
-    toDriver(value: string): string {
-        return encrypt(value);
-    },
-    fromDriver(value: string): string {
-        return decrypt(value);
-    },
-});
+// const encryptedText = customType<{ data: string; driverData: string }>({
+//     dataType() {
+//         return 'text';
+//     },
+//     toDriver(value: string): string {
+//         return encrypt(value);
+//     },
+//     fromDriver(value: string): string {
+//         return decrypt(value);
+//     },
+// });
 
 // export const users = sqliteTable('users', {
 //     id: text('id').primaryKey(),
@@ -27,7 +27,7 @@ const encryptedText = customType<{ data: string; driverData: string }>({
 // });
 
 // DEBUG: Plain text version to test connection
-export const users = sqliteTable('users', {
+export const users = sqliteTable('freelancers', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     field: text('field').notNull(),
