@@ -41,6 +41,7 @@ export const getClient = () => {
     return createClient({
         url: finalUrl,
         authToken: authToken?.trim(),
+        fetch: fetch,
     });
 };
 
