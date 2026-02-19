@@ -18,35 +18,25 @@ const getClient = () => {
         // Ignore error if getRequestContext fails
     }
 
-    // DEBUG: Log connection details (masked)
-    console.log('DB Connection Attempt:', {
-        url_exists: !!url,
-        url_prefix: url?.substring(0, 15),
-        token_exists: !!authToken,
-        token_length: authToken?.length,
-        is_production: process.env.NODE_ENV === 'production'
-    });
-
     if (!url) {
         if (process.env.NODE_ENV === 'production') {
-            throw new Error('TURSO_DATABASE_URL is not set. Check your Cloudflare Pages "Variables and Secrets" settings.');
+            throw new Error('TURSO_DATABASE_URL is not set. Check Cloudflare Dashboard.');
         }
         console.warn('TURSO_DATABASE_URL is not set, using "file:local.db"');
-    }
-
-    // FIX: Force HTTPS protocol for web client (fetch-based) in Edge environment
-    // @libsql/client/web works best with https:// when using the HTTP interface
-    const finalUrl = url?.replace('libsql://', 'https://');
-
-    try {
+        // fallback for local dev if needed, though @libsql/client/web doesn't like file:
         return createClient({
-            url: finalUrl || 'file:local.db',
-            authToken,
+            url: 'file:local.db',
         });
-    } catch (e) {
-        console.error('Failed to create LibSQL client:', e);
-        throw new Error(`Database client creation failed: ${e instanceof Error ? e.message : String(e)}`);
     }
+
+    // Force HTTPS for web client (fetch-based) in Edge environment
+    const finalUrl = url.replace('libsql://', 'https://');
+
+    return createClient({
+        url: finalUrl,
+        authToken,
+        fetch: fetch, // Explicitly pass the global fetch for Cloudflare compatibility
+    });
 };
 
 export const getDb = () => {
