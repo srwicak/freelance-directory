@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from '@/db/schema';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
-const getClient = () => {
+export const getClient = () => {
     let url = process.env.TURSO_DATABASE_URL;
     let authToken = process.env.TURSO_AUTH_TOKEN;
 
@@ -32,12 +32,15 @@ const getClient = () => {
     // Force HTTPS for web client (fetch-based) in Edge environment
     const finalUrl = url.replace('libsql://', 'https://');
 
-    console.log(`[DB] Initializing client with URL: ${finalUrl.replace(/:[^:@]*@/, ':***@')}`);
+    // Safety check: ensure no raw params leakage in logs
+    const safeUrl = finalUrl.replace(/:[^:@]*@/, ':***@').split('?')[0];
+
+    console.log(`[DB] Initializing client with URL: ${safeUrl}`);
+    console.log(`[DB] Auth Token Present: ${!!authToken}, Length: ${authToken?.length || 0}`);
 
     return createClient({
         url: finalUrl,
-        authToken,
-        // fetch: fetch, // Let the client detect the global fetch
+        authToken: authToken?.trim(),
     });
 };
 
