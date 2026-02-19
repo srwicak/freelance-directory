@@ -1,20 +1,28 @@
 import { createClient } from '@libsql/client/web';
 import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from '@/db/schema';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 const getClient = () => {
-    const url = process.env.TURSO_DATABASE_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN;
+    let url = process.env.TURSO_DATABASE_URL;
+    let authToken = process.env.TURSO_AUTH_TOKEN;
+
+    // Try to get from Cloudflare context if not in process.env
+    try {
+        const context = getRequestContext();
+        if (context?.env) {
+            url = (context.env as any).TURSO_DATABASE_URL || url;
+            authToken = (context.env as any).TURSO_AUTH_TOKEN || authToken;
+        }
+    } catch (e) {
+        // Ignore error if getRequestContext fails (e.g. locally or during build)
+    }
 
     if (!url) {
         if (process.env.NODE_ENV === 'production') {
-            throw new Error('TURSO_DATABASE_URL is not set');
+            throw new Error('TURSO_DATABASE_URL is not set. Please check Cloudflare Dashboard -> Settings -> Variables and Secrets.');
         }
         console.warn('TURSO_DATABASE_URL is not set, using "file:local.db"');
-    }
-
-    if (url?.startsWith('libsql://') && !authToken) {
-        throw new Error('TURSO_AUTH_TOKEN is not set (required for remote connection)');
     }
 
     try {
