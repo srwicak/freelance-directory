@@ -37,83 +37,63 @@ export async function registerUser(formData: {
 export async function getFreelancers() {
     try {
         const client = getClient();
-        console.log('[DB] Diagnostic: Starting...');
+        console.log('[DB] Fetching freelancers via raw SQL...');
 
-        // 1. Test Raw Connection
-        try {
-            console.log('[DB] 1. Testing SELECT 1...');
-            await client.execute('SELECT 1');
-            console.log('[DB] 1. Success.');
-        } catch (e: any) {
-            console.error('[DB] 1. Failed:', e);
-            throw new Error(`Connection Test Failed: ${e.message}`);
-        }
+        // Use raw SQL via the client directly — bypass Drizzle entirely
+        const result = await client.execute(
+            'SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers ORDER BY created_at DESC'
+        );
 
-        // 2. Check Tables
-        try {
-            console.log('[DB] 2. Checking Tables...');
-            const tables = await client.execute("SELECT name FROM sqlite_master WHERE type='table'");
-            console.log('[DB] 2. Tables found:', tables.rows);
+        console.log('[DB] Raw query success. Rows:', result.rows.length);
 
-            const hasFreelancers = tables.rows.some(r => r.name === 'freelancers' || r[0] === 'freelancers');
-            if (!hasFreelancers) {
-                console.error('[DB] CRITICAL: Table "freelancers" NOT FOUND in remote DB!');
-                return { success: false, error: 'Database integrity error: Table missing.' };
-            }
-        } catch (e: any) {
-            console.error('[DB] 2. Failed to list tables:', e);
-            // Don't throw, might be permission issue, try proceeding
-        }
-
-        // 3. Test Raw Select
-        try {
-            console.log('[DB] 3. Testing Raw Select on freelancers...');
-            const count = await client.execute('SELECT count(*) FROM freelancers');
-            console.log('[DB] 3. Count result:', count.rows);
-        } catch (e: any) {
-            console.error('[DB] 3. Failed raw select:', e);
-            throw new Error(`Raw Query Failed: ${e.message}`);
-        }
-
-        // 4. Attempt Drizzle
-        console.log('[DB] 4. Attempting Drizzle Query...');
-        const db = getDb();
-        const data = await db.select().from(users).limit(5);
-        console.log('[DB] 4. Drizzle Success. Rows:', data.length);
+        // Map raw rows to typed objects
+        const data = result.rows.map((row: any) => ({
+            id: row.id ?? row[0],
+            name: row.name ?? row[1],
+            field: row.field ?? row[2],
+            province: row.province ?? row[3],
+            city: row.city ?? row[4],
+            details: row.details ?? row[5],
+            portfolio: row.portfolio ?? row[6],
+            linkedin: row.linkedin ?? row[7],
+            createdAt: row.created_at ?? row[8],
+        }));
 
         return { success: true, data };
     } catch (error: any) {
-        console.error('Failed to fetch freelancers:', error);
-
-        const url = process.env.TURSO_DATABASE_URL;
-
-        // Safe logging of URL
-        const safeUrl = url ? url.replace(/:[^:@]*@/, ':***@') : 'N/A';
-
-        const debugInfo = `
-        [DEBUG INFO]
-        Runtime: ${process.env.NEXT_RUNTIME || 'unknown'}
-        URL: ${safeUrl}
-        Step Failed: ${error.message}
-        Stack: ${error.stack}
-        `;
+        console.error('[DB] Failed to fetch freelancers:', error);
 
         return {
             success: false,
-            error: `Diagnostics Failed: ${error.message}`
+            error: `DB Error: ${error?.message || String(error)}`
         };
     }
 }
 
 export async function getUserById(id: string) {
     try {
-        const db = getDb();
-        const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-        const user = result[0];
+        const client = getClient();
+        const result = await client.execute({
+            sql: 'SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers WHERE id = ?',
+            args: [id],
+        });
 
-        if (!user) {
+        if (result.rows.length === 0) {
             return { success: false, error: 'User tidak ditemukan.' };
         }
+
+        const row: any = result.rows[0];
+        const user = {
+            id: row.id ?? row[0],
+            name: row.name ?? row[1],
+            field: row.field ?? row[2],
+            province: row.province ?? row[3],
+            city: row.city ?? row[4],
+            details: row.details ?? row[5],
+            portfolio: row.portfolio ?? row[6],
+            linkedin: row.linkedin ?? row[7],
+            createdAt: row.created_at ?? row[8],
+        };
 
         return { success: true, data: user };
     } catch (error) {
@@ -132,12 +112,28 @@ export async function updateUser(id: string, formData: {
     linkedin?: string;
 }) {
     try {
-        const db = getDb();
-        await db.update(users)
-            .set({
-                ...formData,
-            })
-            .where(eq(users.id, id));
+        const client = getClient();
+
+        // Build SET clause dynamically
+        const setClauses: string[] = [];
+        const args: any[] = [];
+
+        if (formData.name !== undefined) { setClauses.push('name = ?'); args.push(formData.name); }
+        if (formData.field !== undefined) { setClauses.push('field = ?'); args.push(formData.field); }
+        if (formData.province !== undefined) { setClauses.push('province = ?'); args.push(formData.province); }
+        if (formData.city !== undefined) { setClauses.push('city = ?'); args.push(formData.city); }
+        if (formData.details !== undefined) { setClauses.push('details = ?'); args.push(formData.details); }
+        if (formData.portfolio !== undefined) { setClauses.push('portfolio = ?'); args.push(formData.portfolio); }
+        if (formData.linkedin !== undefined) { setClauses.push('linkedin = ?'); args.push(formData.linkedin); }
+
+        if (setClauses.length === 0) {
+            return { success: false, error: 'Tidak ada data untuk diupdate.' };
+        }
+
+        args.push(id);
+        const sqlStr = `UPDATE freelancers SET ${setClauses.join(', ')} WHERE id = ?`;
+
+        await client.execute({ sql: sqlStr, args });
 
         revalidatePath('/directory');
         revalidatePath(`/edit-profile`);
@@ -146,5 +142,32 @@ export async function updateUser(id: string, formData: {
     } catch (error) {
         console.error('Failed to update user:', error);
         return { success: false, error: 'Gagal update user.' };
+    }
+}
+
+export async function registerUserRaw(formData: {
+    name: string;
+    field: string;
+    province: string;
+    city: string;
+    details: string;
+    portfolio: string;
+    linkedin: string;
+}) {
+    try {
+        const userId = nanoid(10);
+        const client = getClient();
+        const now = Math.floor(Date.now() / 1000);
+
+        await client.execute({
+            sql: 'INSERT INTO freelancers (id, name, field, province, city, details, portfolio, linkedin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            args: [userId, formData.name, formData.field, formData.province, formData.city, formData.details, formData.portfolio, formData.linkedin, now],
+        });
+
+        revalidatePath('/directory');
+        return { success: true, userId };
+    } catch (error) {
+        console.error('Failed to register user:', error);
+        return { success: false, error: 'Gagal mendaftar user.' };
     }
 }

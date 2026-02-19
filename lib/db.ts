@@ -1,4 +1,4 @@
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from '@/db/schema';
 import { getRequestContext } from '@cloudflare/next-on-pages';
@@ -23,7 +23,6 @@ export const getClient = () => {
             throw new Error('TURSO_DATABASE_URL is not set. Check Cloudflare Dashboard.');
         }
         console.warn('TURSO_DATABASE_URL is not set, using "file:local.db"');
-        // fallback for local dev if needed, though @libsql/client/web doesn't like file:
         return createClient({
             url: 'file:local.db',
         });
@@ -32,16 +31,13 @@ export const getClient = () => {
     // Force HTTPS for web client (fetch-based) in Edge environment
     const finalUrl = url.replace('libsql://', 'https://');
 
-    // Safety check: ensure no raw params leakage in logs
-    const safeUrl = finalUrl.replace(/:[^:@]*@/, ':***@').split('?')[0];
-
-    console.log(`[DB] Initializing client with URL: ${safeUrl}`);
-    console.log(`[DB] Auth Token Present: ${!!authToken}, Length: ${authToken?.length || 0}`);
+    console.log(`[DB] URL: ${finalUrl.substring(0, 20)}...`);
+    console.log(`[DB] Token: ${authToken ? 'present (' + authToken.length + ' chars)' : 'MISSING'}`);
 
     return createClient({
         url: finalUrl,
         authToken: authToken?.trim(),
-        fetch: fetch,
+        fetch: globalThis.fetch,
     });
 };
 
