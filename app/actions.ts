@@ -1,7 +1,7 @@
 'use server';
 
 
-import { getDb, getClient } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { users } from '@/db/schema';
 import { revalidatePath } from 'next/cache';
 import { desc, eq, sql } from 'drizzle-orm';
@@ -36,24 +36,16 @@ export async function registerUser(formData: {
 
 export async function getFreelancers() {
     try {
-        const client = getClient();
-        console.log('[DB] Testing raw client connection...');
-
-        // Raw connection test
-        try {
-            const rawTest = await client.execute("SELECT 1");
-            console.log('[DB] Raw client execute success:', rawTest);
-        } catch (rawError) {
-            console.error('[DB] Raw client execute FAILED:', rawError);
-            throw new Error(`Raw Client Connection Failed: ${rawError instanceof Error ? rawError.message : String(rawError)}`);
-        }
-
         const db = getDb();
         console.log('[DB] Drizzle client initialized.');
 
         // Check tables via raw SQL via Drizzle
-        // const tables = await db.run(sql`SELECT name FROM sqlite_master WHERE type='table'`);
-        // console.log('[DB] Tables found:', tables.rows.map((r: any) => r.name));
+        try {
+            const tables = await db.run(sql`SELECT name FROM sqlite_master WHERE type='table'`);
+            console.log('[DB] Tables found:', tables.rows.map((r: any) => r.name));
+        } catch (tableError) {
+            console.error('[DB] Failed to list tables:', tableError);
+        }
 
         const data = await db.select().from(users).limit(5); // Simplify query temporarily
         console.log('[DB] Data fetched successfully:', data.length, 'records');
