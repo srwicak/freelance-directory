@@ -3,27 +3,6 @@
 
 import { getRequestContext } from '@cloudflare/next-on-pages';
 
-interface TursoResult {
-    columns: string[];
-    rows: any[][];
-    affected_row_count: number;
-    last_insert_rowid: string | null;
-}
-
-interface TursoResponse {
-    results: Array<{
-        type: 'ok' | 'error';
-        response?: {
-            type: string;
-            result: TursoResult;
-        };
-        error?: {
-            message: string;
-            code: string;
-        };
-    }>;
-}
-
 function getConfig() {
     let url = process.env.TURSO_DATABASE_URL;
     let authToken = process.env.TURSO_AUTH_TOKEN;
@@ -89,23 +68,29 @@ export async function tursoExecute(sql: string, args: any[] = []): Promise<{ col
         throw new Error(`Turso HTTP error ${response.status}: ${text}`);
     }
 
-    const data: TursoResponse = await response.json();
+    const data = await response.json() as any;
 
     if (!data.results || data.results.length === 0) {
-        throw new Error('No results from Turso');
+        throw new Error(`No results from Turso. Response: ${JSON.stringify(data).substring(0, 500)}`);
     }
 
     const first = data.results[0];
     if (first.type === 'error') {
-        throw new Error(`Turso query error: ${first.error?.message || 'Unknown'}`);
+        throw new Error(`Turso query error: ${first.error?.message || JSON.stringify(first.error)}`);
     }
 
-    const result = first.response!.result;
+    const result = first.response?.result;
+    if (!result) {
+        throw new Error(`No result in response. Full response: ${JSON.stringify(data).substring(0, 500)}`);
+    }
 
-    // Convert row arrays to objects using column names
+    // Hrana v2 uses "cols" (array of {name, decltype}) not "columns"
+    const cols = result.cols || result.columns || [];
+    const columnNames = cols.map((c: any) => typeof c === 'string' ? c : c.name);
+
     return {
-        columns: result.columns,
-        rows: result.rows,
+        columns: columnNames,
+        rows: result.rows || [],
     };
 }
 
@@ -113,9 +98,9 @@ export async function tursoExecute(sql: string, args: any[] = []): Promise<{ col
 export async function tursoQuery(sql: string, args: any[] = []): Promise<Record<string, any>[]> {
     const { columns, rows } = await tursoExecute(sql, args);
 
-    return rows.map(row => {
+    return rows.map((row: any[]) => {
         const obj: Record<string, any> = {};
-        columns.forEach((col, i) => {
+        columns.forEach((col: string, i: number) => {
             // Hrana returns values as { type, value } objects
             const cell = row[i];
             if (cell && typeof cell === 'object' && 'value' in cell) {

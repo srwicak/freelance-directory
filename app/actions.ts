@@ -30,13 +30,58 @@ export async function registerUser(formData: {
     }
 }
 
-export async function getFreelancers() {
+export async function getFreelancers(
+    page: number = 1,
+    limit: number = 20,
+    search: string = '',
+    fieldFilter: string = ''
+) {
     try {
+        const offset = (page - 1) * limit;
+
+        // Build WHERE clauses
+        const conditions: string[] = [];
+        const countArgs: any[] = [];
+        const queryArgs: any[] = [];
+
+        if (search.trim()) {
+            const searchPattern = `%${search.trim()}%`;
+            conditions.push('(name LIKE ? OR field LIKE ? OR province LIKE ? OR city LIKE ? OR details LIKE ?)');
+            // Args for both count and query
+            const searchArgs = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
+            countArgs.push(...searchArgs);
+            queryArgs.push(...searchArgs);
+        }
+
+        if (fieldFilter.trim()) {
+            conditions.push('field = ?');
+            countArgs.push(fieldFilter.trim());
+            queryArgs.push(fieldFilter.trim());
+        }
+
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+        // Get total count (with filters)
+        const countResult = await tursoQuery(
+            `SELECT count(*) as total FROM freelancers ${whereClause}`,
+            countArgs
+        );
+        const totalCount = parseInt(countResult[0]?.total || '0', 10);
+
+        // Get paginated + filtered data
+        queryArgs.push(limit, offset);
         const data = await tursoQuery(
-            'SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers ORDER BY created_at DESC'
+            `SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+            queryArgs
         );
 
-        return { success: true, data };
+        return {
+            success: true,
+            data,
+            totalCount,
+            hasMore: offset + data.length < totalCount,
+            page,
+        };
     } catch (error: any) {
         console.error('[DB] Failed to fetch freelancers:', error);
         return {
@@ -45,6 +90,7 @@ export async function getFreelancers() {
         };
     }
 }
+
 
 export async function getUserById(id: string) {
     try {

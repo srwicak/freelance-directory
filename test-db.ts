@@ -1,40 +1,54 @@
-import { createClient } from "@libsql/client";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const url = process.env.TURSO_DATABASE_URL?.replace("libsql://", "https://");
-const authToken = process.env.TURSO_AUTH_TOKEN;
+const url = process.env.TURSO_DATABASE_URL!.replace('libsql://', 'https://');
+const authToken = process.env.TURSO_AUTH_TOKEN!.trim();
 
+console.log("Testing Turso Hrana HTTP API directly...");
 console.log("URL:", url);
 
-const client = createClient({
-    url: url!,
-    authToken: authToken!,
-});
-
 async function test() {
+    const body = {
+        requests: [
+            { type: 'execute', stmt: { sql: 'SELECT 1 as test', args: [] } },
+            { type: 'close' }
+        ]
+    };
+
     try {
-        console.log("Checking connection...");
-        const rs = await client.execute("SELECT 1");
-        console.log("Connection successful!", rs);
+        const response = await fetch(`${url}/v2/pipeline`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
 
-        console.log("Checking tables...");
-        const tables = await client.execute("SELECT name FROM sqlite_master WHERE type='table'");
-        console.log("Tables found:", tables.rows);
+        console.log("Status:", response.status);
+        const data = await response.json();
+        console.log("Full response:", JSON.stringify(data, null, 2));
 
-        const hasFreelancers = tables.rows.some(r => r.name === 'freelancers');
-        if (hasFreelancers) {
-            console.log("Table 'freelancers' exists. Checking count...");
-            const count = await client.execute("SELECT count(*) as c FROM freelancers");
-            console.log("Freelancers count:", count.rows[0]);
+        // Now test actual table query
+        const body2 = {
+            requests: [
+                { type: 'execute', stmt: { sql: 'SELECT id, name, field FROM freelancers LIMIT 2', args: [] } },
+                { type: 'close' }
+            ]
+        };
 
-            console.log("Checking schema of 'freelancers'...");
-            const schema = await client.execute("PRAGMA table_info(freelancers)");
-            console.log("Schema:", schema.rows);
+        const response2 = await fetch(`${url}/v2/pipeline`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body2),
+        });
 
-        } else {
-            console.log("Table 'freelancers' NOT found!");
-        }
+        console.log("\nTable query status:", response2.status);
+        const data2 = await response2.json();
+        console.log("Table query response:", JSON.stringify(data2, null, 2));
 
     } catch (e) {
         console.error("Error:", e);
