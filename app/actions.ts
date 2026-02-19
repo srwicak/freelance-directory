@@ -47,11 +47,9 @@ export async function getFreelancers() {
             connectionTest = `Failed: ${e instanceof Error ? e.message : String(e)}`;
         }
 
-        const data = await db.query.users.findMany({
-            orderBy: [desc(users.createdAt)],
-        });
+        const data = await db.select().from(users).orderBy(desc(users.createdAt));
         return { success: true, data };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to fetch freelancers:', error);
 
         const url = process.env.TURSO_DATABASE_URL;
@@ -61,7 +59,9 @@ export async function getFreelancers() {
         Runtime: ${process.env.NEXT_RUNTIME || 'unknown'}
         URL Configured: ${!!url}
         URL Prefix: ${url ? url.substring(0, 10) + '...' : 'N/A'}
-        Error Message: ${error instanceof Error ? error.message : String(error)}
+        Error Message: ${error?.message || String(error)}
+        Error Stack: ${error?.stack || 'N/A'}
+        Error Cause: ${error?.cause ? (typeof error.cause === 'object' ? JSON.stringify(error.cause) : String(error.cause)) : 'N/A'}
         `;
 
         return {
@@ -74,9 +74,8 @@ export async function getFreelancers() {
 export async function getUserById(id: string) {
     try {
         const db = getDb();
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, id),
-        });
+        const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+        const user = result[0];
 
         if (!user) {
             return { success: false, error: 'User tidak ditemukan.' };
