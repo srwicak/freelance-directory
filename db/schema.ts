@@ -14,14 +14,27 @@ const encryptedText = customType<{ data: string; driverData: string }>({
     },
 });
 
+// export const users = sqliteTable('users', {
+//     id: text('id').primaryKey(),
+//     name: encryptedText('name').notNull(),
+//     field: text('field').notNull(), // Bidang Keahlian
+//     province: text('province').notNull(),
+//     city: text('city').notNull(),
+//     details: encryptedText('details'),
+//     portfolio: encryptedText('portfolio'),
+//     linkedin: encryptedText('linkedin').notNull(),
+//     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(strftime('%s', 'now'))`),
+// });
+
+// DEBUG: Plain text version to test connection
 export const users = sqliteTable('users', {
     id: text('id').primaryKey(),
-    name: encryptedText('name').notNull(),
-    field: text('field').notNull(), // Bidang Keahlian
+    name: text('name').notNull(),
+    field: text('field').notNull(),
     province: text('province').notNull(),
     city: text('city').notNull(),
-    details: encryptedText('details'),
-    portfolio: encryptedText('portfolio'),
-    linkedin: encryptedText('linkedin').notNull(),
+    details: text('details'),
+    portfolio: text('portfolio'),
+    linkedin: text('linkedin').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
