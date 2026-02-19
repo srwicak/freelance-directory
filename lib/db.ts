@@ -29,14 +29,18 @@ const getClient = () => {
 
     if (!url) {
         if (process.env.NODE_ENV === 'production') {
-            throw new Error('TURSO_DATABASE_URL is not set. Please check Cloudflare Dashboard -> Settings -> Variables and Secrets.');
+            throw new Error('TURSO_DATABASE_URL is not set. Check your Cloudflare Pages "Variables and Secrets" settings.');
         }
         console.warn('TURSO_DATABASE_URL is not set, using "file:local.db"');
     }
 
+    // FIX: Force HTTPS protocol for web client (fetch-based) in Edge environment
+    // @libsql/client/web works best with https:// when using the HTTP interface
+    const finalUrl = url?.replace('libsql://', 'https://');
+
     try {
         return createClient({
-            url: url || 'file:local.db',
+            url: finalUrl || 'file:local.db',
             authToken,
         });
     } catch (e) {
