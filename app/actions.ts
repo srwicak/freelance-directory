@@ -1,7 +1,7 @@
 'use server';
 
 
-import { getDb } from '@/lib/db';
+import { getDb, getClient } from '@/lib/db';
 import { users } from '@/db/schema';
 import { revalidatePath } from 'next/cache';
 import { desc, eq, sql } from 'drizzle-orm';
@@ -36,19 +36,50 @@ export async function registerUser(formData: {
 
 export async function getFreelancers() {
     try {
-        const db = getDb();
-        console.log('[DB] Drizzle client initialized.');
+        const client = getClient();
+        console.log('[DB] Diagnostic: Starting...');
 
-        // Check tables via raw SQL via Drizzle
+        // 1. Test Raw Connection
         try {
-            const tables = await db.run(sql`SELECT name FROM sqlite_master WHERE type='table'`);
-            console.log('[DB] Tables found:', tables.rows.map((r: any) => r.name));
-        } catch (tableError) {
-            console.error('[DB] Failed to list tables:', tableError);
+            console.log('[DB] 1. Testing SELECT 1...');
+            await client.execute('SELECT 1');
+            console.log('[DB] 1. Success.');
+        } catch (e: any) {
+            console.error('[DB] 1. Failed:', e);
+            throw new Error(`Connection Test Failed: ${e.message}`);
         }
 
-        const data = await db.select().from(users).limit(5); // Simplify query temporarily
-        console.log('[DB] Data fetched successfully:', data.length, 'records');
+        // 2. Check Tables
+        try {
+            console.log('[DB] 2. Checking Tables...');
+            const tables = await client.execute("SELECT name FROM sqlite_master WHERE type='table'");
+            console.log('[DB] 2. Tables found:', tables.rows);
+
+            const hasFreelancers = tables.rows.some(r => r.name === 'freelancers' || r[0] === 'freelancers');
+            if (!hasFreelancers) {
+                console.error('[DB] CRITICAL: Table "freelancers" NOT FOUND in remote DB!');
+                return { success: false, error: 'Database integrity error: Table missing.' };
+            }
+        } catch (e: any) {
+            console.error('[DB] 2. Failed to list tables:', e);
+            // Don't throw, might be permission issue, try proceeding
+        }
+
+        // 3. Test Raw Select
+        try {
+            console.log('[DB] 3. Testing Raw Select on freelancers...');
+            const count = await client.execute('SELECT count(*) FROM freelancers');
+            console.log('[DB] 3. Count result:', count.rows);
+        } catch (e: any) {
+            console.error('[DB] 3. Failed raw select:', e);
+            throw new Error(`Raw Query Failed: ${e.message}`);
+        }
+
+        // 4. Attempt Drizzle
+        console.log('[DB] 4. Attempting Drizzle Query...');
+        const db = getDb();
+        const data = await db.select().from(users).limit(5);
+        console.log('[DB] 4. Drizzle Success. Rows:', data.length);
 
         return { success: true, data };
     } catch (error: any) {
@@ -56,18 +87,20 @@ export async function getFreelancers() {
 
         const url = process.env.TURSO_DATABASE_URL;
 
+        // Safe logging of URL
+        const safeUrl = url ? url.replace(/:[^:@]*@/, ':***@') : 'N/A';
+
         const debugInfo = `
         [DEBUG INFO]
         Runtime: ${process.env.NEXT_RUNTIME || 'unknown'}
-        URL Configured: ${!!url}
-        URL Prefix: ${url ? url.substring(0, 10) + '...' : 'N/A'}
-        Error Message: ${error?.message || String(error)}
-        Error Stack: ${error?.stack || 'N/A'}
+        URL: ${safeUrl}
+        Step Failed: ${error.message}
+        Stack: ${error.stack}
         `;
 
         return {
             success: false,
-            error: `Gagal DB. ${debugInfo}`
+            error: `Diagnostics Failed: ${error.message}`
         };
     }
 }
