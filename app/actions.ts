@@ -1,10 +1,7 @@
 'use server';
 
-
-import { getDb, getClient } from '@/lib/db';
-import { users } from '@/db/schema';
+import { tursoQuery, tursoExecute } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { desc, eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 export async function registerUser(formData: {
@@ -18,13 +15,12 @@ export async function registerUser(formData: {
 }) {
     try {
         const userId = nanoid(10);
-        const db = getDb();
+        const now = Math.floor(Date.now() / 1000);
 
-        await db.insert(users).values({
-            id: userId,
-            ...formData,
-            createdAt: new Date(),
-        });
+        await tursoExecute(
+            'INSERT INTO freelancers (id, name, field, province, city, details, portfolio, linkedin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [userId, formData.name, formData.field, formData.province, formData.city, formData.details, formData.portfolio, formData.linkedin, now]
+        );
 
         revalidatePath('/directory');
         return { success: true, userId };
@@ -36,33 +32,13 @@ export async function registerUser(formData: {
 
 export async function getFreelancers() {
     try {
-        const client = getClient();
-        console.log('[DB] Fetching freelancers via raw SQL...');
-
-        // Use raw SQL via the client directly — bypass Drizzle entirely
-        const result = await client.execute(
+        const data = await tursoQuery(
             'SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers ORDER BY created_at DESC'
         );
-
-        console.log('[DB] Raw query success. Rows:', result.rows.length);
-
-        // Map raw rows to typed objects
-        const data = result.rows.map((row: any) => ({
-            id: row.id ?? row[0],
-            name: row.name ?? row[1],
-            field: row.field ?? row[2],
-            province: row.province ?? row[3],
-            city: row.city ?? row[4],
-            details: row.details ?? row[5],
-            portfolio: row.portfolio ?? row[6],
-            linkedin: row.linkedin ?? row[7],
-            createdAt: row.created_at ?? row[8],
-        }));
 
         return { success: true, data };
     } catch (error: any) {
         console.error('[DB] Failed to fetch freelancers:', error);
-
         return {
             success: false,
             error: `DB Error: ${error?.message || String(error)}`
@@ -72,30 +48,16 @@ export async function getFreelancers() {
 
 export async function getUserById(id: string) {
     try {
-        const client = getClient();
-        const result = await client.execute({
-            sql: 'SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers WHERE id = ?',
-            args: [id],
-        });
+        const rows = await tursoQuery(
+            'SELECT id, name, field, province, city, details, portfolio, linkedin, created_at FROM freelancers WHERE id = ?',
+            [id]
+        );
 
-        if (result.rows.length === 0) {
+        if (rows.length === 0) {
             return { success: false, error: 'User tidak ditemukan.' };
         }
 
-        const row: any = result.rows[0];
-        const user = {
-            id: row.id ?? row[0],
-            name: row.name ?? row[1],
-            field: row.field ?? row[2],
-            province: row.province ?? row[3],
-            city: row.city ?? row[4],
-            details: row.details ?? row[5],
-            portfolio: row.portfolio ?? row[6],
-            linkedin: row.linkedin ?? row[7],
-            createdAt: row.created_at ?? row[8],
-        };
-
-        return { success: true, data: user };
+        return { success: true, data: rows[0] };
     } catch (error) {
         console.error('Failed to fetch user:', error);
         return { success: false, error: 'Gagal mengambil data user.' };
@@ -112,9 +74,6 @@ export async function updateUser(id: string, formData: {
     linkedin?: string;
 }) {
     try {
-        const client = getClient();
-
-        // Build SET clause dynamically
         const setClauses: string[] = [];
         const args: any[] = [];
 
@@ -131,43 +90,17 @@ export async function updateUser(id: string, formData: {
         }
 
         args.push(id);
-        const sqlStr = `UPDATE freelancers SET ${setClauses.join(', ')} WHERE id = ?`;
-
-        await client.execute({ sql: sqlStr, args });
+        await tursoExecute(
+            `UPDATE freelancers SET ${setClauses.join(', ')} WHERE id = ?`,
+            args
+        );
 
         revalidatePath('/directory');
-        revalidatePath(`/edit-profile`);
+        revalidatePath('/edit-profile');
 
         return { success: true };
     } catch (error) {
         console.error('Failed to update user:', error);
         return { success: false, error: 'Gagal update user.' };
-    }
-}
-
-export async function registerUserRaw(formData: {
-    name: string;
-    field: string;
-    province: string;
-    city: string;
-    details: string;
-    portfolio: string;
-    linkedin: string;
-}) {
-    try {
-        const userId = nanoid(10);
-        const client = getClient();
-        const now = Math.floor(Date.now() / 1000);
-
-        await client.execute({
-            sql: 'INSERT INTO freelancers (id, name, field, province, city, details, portfolio, linkedin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            args: [userId, formData.name, formData.field, formData.province, formData.city, formData.details, formData.portfolio, formData.linkedin, now],
-        });
-
-        revalidatePath('/directory');
-        return { success: true, userId };
-    } catch (error) {
-        console.error('Failed to register user:', error);
-        return { success: false, error: 'Gagal mendaftar user.' };
     }
 }
