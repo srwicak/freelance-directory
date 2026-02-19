@@ -15,8 +15,17 @@ const getClient = () => {
             authToken = (context.env as any).TURSO_AUTH_TOKEN || authToken;
         }
     } catch (e) {
-        // Ignore error if getRequestContext fails (e.g. locally or during build)
+        // Ignore error if getRequestContext fails
     }
+
+    // DEBUG: Log connection details (masked)
+    console.log('DB Connection Attempt:', {
+        url_exists: !!url,
+        url_prefix: url?.substring(0, 15),
+        token_exists: !!authToken,
+        token_length: authToken?.length,
+        is_production: process.env.NODE_ENV === 'production'
+    });
 
     if (!url) {
         if (process.env.NODE_ENV === 'production') {
