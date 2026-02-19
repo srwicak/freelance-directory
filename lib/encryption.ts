@@ -4,9 +4,21 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 
+import { getRequestContext } from '@cloudflare/next-on-pages';
+
 // Helper to get key from env
 const getEncryptionKey = () => {
-    const key = process.env.ENCRYPTION_KEY;
+    let key = process.env.ENCRYPTION_KEY;
+
+    try {
+        const context = getRequestContext();
+        if (context?.env) {
+            key = (context.env as any).ENCRYPTION_KEY || key;
+        }
+    } catch (e) {
+        // Ignore
+    }
+
     if (!key) {
         throw new Error('ENCRYPTION_KEY is not defined in environment variables');
     }
@@ -20,6 +32,7 @@ const getEncryptionKey = () => {
     }
     throw new Error('ENCRYPTION_KEY must be 32 bytes (64 hex characters or 32 characters)');
 };
+
 
 export const encrypt = (text: string): string => {
     if (!text) return text;
