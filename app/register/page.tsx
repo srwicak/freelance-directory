@@ -26,6 +26,7 @@ export default function RegisterPage() {
     const [formData, setFormData] = useState({
         name: '',
         field: '',
+        subField: '',
         province: '',
         city: '',
         details: '',
@@ -93,6 +94,7 @@ export default function RegisterPage() {
             if (result.success && result.userId) {
                 setSuccessId(result.userId);
                 localStorage.setItem('freelancer_access_id', result.userId);
+                window.dispatchEvent(new Event('auth-change'));
             } else {
                 throw new Error(result.error || 'Unknown error');
             }
@@ -192,18 +194,26 @@ export default function RegisterPage() {
     return (
         <div className="flex flex-col items-center py-4 md:py-8">
             {/* Back link */}
-            <div className="w-full max-w-lg mb-6">
+            <div className="w-full max-w-lg mb-6 relative z-10">
                 <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[40px]">
                     <ArrowLeft className="h-4 w-4 mr-1.5" />
                     Kembali ke Beranda
                 </Link>
             </div>
 
+            {/* Overlay to close dropdown */}
+            {isDropdownOpen && (
+                <div
+                    className="fixed inset-0 z-0 bg-transparent"
+                    onClick={() => setIsDropdownOpen(false)}
+                />
+            )}
+
             <motion.div
                 initial="hidden"
                 animate="visible"
                 variants={fadeInUp}
-                className="w-full max-w-lg"
+                className="w-full max-w-lg relative z-10"
             >
                 <Card className="border-0 shadow-xl shadow-black/5">
                     <CardHeader className="pb-3">
@@ -382,6 +392,23 @@ export default function RegisterPage() {
                                                 Pilih kategori yang paling sesuai dengan keahlian Anda.
                                             </p>
                                         </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="subField" className="text-sm font-semibold">
+                                                Sub-Bidang / Spesialisasi <span className="text-xs text-muted-foreground font-normal">(Opsional)</span>
+                                            </Label>
+                                            <Input
+                                                id="subField"
+                                                placeholder="Contoh: Digital Marketing Specialist, UI Designer, dsb."
+                                                value={formData.subField}
+                                                maxLength={40}
+                                                onChange={(e) => setFormData({ ...formData, subField: e.target.value })}
+                                                className="h-12 rounded-xl text-base"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Lebih spesifik mengenai sub-bidang atau posisi Anda saat ini.
+                                            </p>
+                                        </div>
                                     </motion.div>
                                 )}
 
@@ -472,14 +499,6 @@ export default function RegisterPage() {
                     </form>
                 </Card>
             </motion.div>
-
-            {/* Overlay to close dropdown */}
-            {isDropdownOpen && (
-                <div
-                    className="fixed inset-0 z-0 bg-transparent"
-                    onClick={() => setIsDropdownOpen(false)}
-                />
-            )}
         </div>
     );
 }

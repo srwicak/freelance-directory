@@ -103,8 +103,14 @@ export async function tursoQuery(sql: string, args: any[] = []): Promise<Record<
         columns.forEach((col: string, i: number) => {
             // Hrana returns values as { type, value } objects
             const cell = row[i];
-            if (cell && typeof cell === 'object' && 'value' in cell) {
-                obj[col] = cell.value;
+            if (cell && typeof cell === 'object') {
+                if ('value' in cell) {
+                    obj[col] = cell.value;
+                } else if (cell.type === 'null') {
+                    obj[col] = null;
+                } else {
+                    obj[col] = cell;
+                }
             } else {
                 obj[col] = cell;
             }

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Search, UserPlus, Shield, Database, KeyRound, Users, Sparkles } from "lucide-react"
+import { ArrowRight, Search, UserPlus, Shield, Database, KeyRound, Users, Sparkles, Briefcase } from "lucide-react"
 import { motion } from "framer-motion"
 
 const fadeInUp = {
@@ -21,7 +21,7 @@ const features = [
   {
     icon: Database,
     title: "Terdata Rapi",
-    description: "Direktori terstruktur berdasarkan bidang keahlian dan lokasi memudahkan pencarian talent.",
+    description: "Direktori terstruktur berdasarkan bidang keahlian dan lokasi memudahkan pencarian tasker.",
     color: "from-indigo-500/20 to-violet-500/20",
     iconColor: "text-indigo-600",
   },
@@ -73,7 +73,7 @@ export default function Home() {
 
         <motion.div
           variants={fadeInUp}
-          className="flex flex-col sm:flex-row gap-4 w-full justify-center max-w-md sm:max-w-none"
+          className="flex flex-col sm:flex-row flex-wrap gap-4 w-full justify-center max-w-2xl"
         >
           <Button asChild size="lg" className="h-14 px-8 text-base font-semibold bg-gradient-primary hover:opacity-90 shadow-lg transition-all rounded-xl">
             <Link href="/register">
@@ -85,6 +85,12 @@ export default function Home() {
             <Link href="/directory">
               <Search className="mr-2.5 h-5 w-5" />
               Cari Freelancer
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="lg" className="h-14 px-8 text-base font-semibold rounded-xl hover:bg-secondary/80">
+            <Link href="/board">
+              <Briefcase className="mr-2.5 h-5 w-5" />
+              Loker & Proyek
             </Link>
           </Button>
         </motion.div>

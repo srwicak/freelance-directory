@@ -29,6 +29,7 @@ export default function EditProfilePage() {
     const [formData, setFormData] = useState({
         name: '',
         field: '',
+        subField: '',
         province: '',
         city: '',
         details: '',
@@ -63,6 +64,7 @@ export default function EditProfilePage() {
                 setFormData({
                     name: user.name || '',
                     field: user.field || '',
+                    subField: user.sub_field || user.subField || '',
                     province: user.province || '',
                     city: user.city || '',
                     details: user.details || '',
@@ -81,6 +83,7 @@ export default function EditProfilePage() {
                 setIsAuthenticated(true);
                 // Save to local storage if manual entry
                 localStorage.setItem('freelancer_access_id', id);
+                window.dispatchEvent(new Event('auth-change'));
             } else {
                 // If ID invalid, maybe clear storage?
                 // localStorage.removeItem('freelancer_access_id');
@@ -151,11 +154,13 @@ export default function EditProfilePage() {
 
     const handleLogout = () => {
         localStorage.removeItem('freelancer_access_id');
+        window.dispatchEvent(new Event('auth-change'));
         setUserId('');
         setIsAuthenticated(false);
         setFormData({
             name: '',
             field: '',
+            subField: '',
             province: '',
             city: '',
             details: '',
@@ -223,7 +228,7 @@ export default function EditProfilePage() {
 
     return (
         <div className="flex flex-col items-center py-4 md:py-8">
-            <div className="w-full max-w-2xl mb-6 flex justify-between items-center px-4 md:px-0">
+            <div className="w-full max-w-2xl mb-6 flex justify-between items-center px-4 md:px-0 relative z-10">
                 <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
                     <ArrowLeft className="h-4 w-4 mr-1.5" />
                     Kembali
@@ -233,16 +238,24 @@ export default function EditProfilePage() {
                         ID: {userId}
                     </span>
                     <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs h-7">
-                        Ganti Akun
+                        Keluar Akun
                     </Button>
                 </div>
             </div>
+
+            {/* Overlay to close dropdown */}
+            {isDropdownOpen && (
+                <div
+                    className="fixed inset-0 z-0 bg-transparent"
+                    onClick={() => setIsDropdownOpen(false)}
+                />
+            )}
 
             <motion.div
                 initial="hidden"
                 animate="visible"
                 variants={fadeInUp}
-                className="w-full max-w-2xl"
+                className="w-full max-w-2xl relative z-10"
             >
                 <Card className="border-0 shadow-xl shadow-black/5">
                     <CardHeader className="pb-3 border-b mb-4">
@@ -380,6 +393,17 @@ export default function EditProfilePage() {
                                         )}
                                     </div>
                                 </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="subField">Sub-Bidang / Spesialisasi <span className="text-xs text-muted-foreground font-normal">(Opsional)</span></Label>
+                                    <Input
+                                        id="subField"
+                                        placeholder="Contoh: Digital Marketing Specialist, UI Designer..."
+                                        value={formData.subField}
+                                        maxLength={40}
+                                        onChange={(e) => setFormData({ ...formData, subField: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
                             <div className="h-px bg-border" />
@@ -437,14 +461,6 @@ export default function EditProfilePage() {
                     </form>
                 </Card>
             </motion.div>
-
-            {/* Overlay to close dropdown */}
-            {isDropdownOpen && (
-                <div
-                    className="fixed inset-0 z-0 bg-transparent"
-                    onClick={() => setIsDropdownOpen(false)}
-                />
-            )}
         </div>
     );
 }

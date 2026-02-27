@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import AuthButton from '@/components/AuthButton'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -43,17 +44,18 @@ export default function RootLayout({
 
               <div className="flex items-center gap-2">
                 <Link
+                  href="/board"
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted min-h-[40px]"
+                >
+                  Board
+                </Link>
+                <Link
                   href="/directory"
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted min-h-[40px]"
                 >
                   Direktori
                 </Link>
-                <Link
-                  href="/register"
-                  className="inline-flex items-center justify-center px-5 py-2 text-sm font-semibold text-primary-foreground bg-gradient-primary rounded-lg shadow-sm hover:opacity-90 transition-all min-h-[40px]"
-                >
-                  Gabung
-                </Link>
+                <AuthButton />
               </div>
             </div>
           </div>

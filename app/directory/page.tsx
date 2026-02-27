@@ -6,7 +6,7 @@ import { getFreelancers } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Search, Lock, Unlock, ExternalLink, MapPin, Users, X, ArrowLeft, LogOut, ShieldCheck } from 'lucide-react';
+import { Loader2, Search, Lock, Unlock, ExternalLink, MapPin, Users, X, ArrowLeft, LogOut, ShieldCheck, Hash } from 'lucide-react';
 import { CATEGORY_MAPPING, DISCIPLINES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ interface Freelancer {
     id: string;
     name: string;
     field: string;
+    sub_field?: string;
     province?: string;
     city?: string;
     details: string;
@@ -50,6 +51,7 @@ export default function DirectoryPage() {
     // Access Control
     const [viewerId, setViewerId] = useState<string | null>(null);
     const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<Freelancer | null>(null);
     const [tempId, setTempId] = useState('');
     const [accessError, setAccessError] = useState('');
     const [verifying, setVerifying] = useState(false);
@@ -195,7 +197,7 @@ export default function DirectoryPage() {
                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Direktori Freelancer</h1>
                     </div>
                     <p className="text-muted-foreground text-sm md:text-base">
-                        Temukan talent terbaik di komunitas kami
+                        Temukan tasker terbaik di komunitas kami
                         {!loading && <span className="ml-1">— <span className="font-semibold text-foreground">{totalCount}</span> anggota{(debouncedSearch || selectedField) ? ' ditemukan' : ''}</span>}
                     </p>
                 </div>
@@ -332,10 +334,16 @@ export default function DirectoryPage() {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="mt-3">
+                                        <div className="mt-3 flex flex-wrap gap-2">
                                             <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold badge-primary">
                                                 {getLocalizedField(user.field)}
                                             </span>
+                                            {user.sub_field && (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-muted text-muted-foreground border border-border/50">
+                                                    <Hash className="h-3 w-3 shrink-0" />
+                                                    {user.sub_field}
+                                                </span>
+                                            )}
                                         </div>
                                     </CardHeader>
 
@@ -348,10 +356,20 @@ export default function DirectoryPage() {
                                                 className="space-y-3"
                                             >
                                                 {user.details && (
-                                                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                                                        {user.details}
-                                                    </p>
+                                                    <div className="space-y-1">
+                                                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                                                            {user.details}
+                                                        </p>
+                                                    </div>
                                                 )}
+                                                <div className="-mt-1">
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); setSelectedUser(user); }}
+                                                        className="text-xs font-semibold text-primary hover:underline transition-colors focus:outline-none"
+                                                    >
+                                                        Lihat detail profil
+                                                    </button>
+                                                </div>
                                                 <div className="flex flex-col gap-2 pt-1">
                                                     <a
                                                         href={user.linkedin}
@@ -542,6 +560,96 @@ export default function DirectoryPage() {
                                         Daftar Sekarang
                                     </Link>
                                 </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* User Detail Modal */}
+            <AnimatePresence>
+                {selectedUser && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+                        onClick={() => setSelectedUser(null)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-card w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between p-5 border-b border-border">
+                                <h3 className="text-lg font-bold">Detail Profil</h3>
+                                <button
+                                    onClick={() => setSelectedUser(null)}
+                                    className="p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <div className="overflow-y-auto p-5 space-y-6">
+                                <div className="flex items-start gap-4">
+                                    <div className={`flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br ${getAvatarColor(selectedUser.name)} text-white text-lg font-bold shrink-0 shadow-sm`}>
+                                        {getInitials(selectedUser.name)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="text-xl font-bold text-foreground break-words">{selectedUser.name}</h4>
+                                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold badge-primary">
+                                                {getLocalizedField(selectedUser.field)}
+                                            </span>
+                                            {selectedUser.sub_field && (
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground border border-border/50">
+                                                    <Hash className="h-3 w-3 shrink-0" />
+                                                    {selectedUser.sub_field}
+                                                </span>
+                                            )}
+                                            {(selectedUser.city || selectedUser.province) && (
+                                                <div className="flex items-center text-xs text-muted-foreground">
+                                                    <MapPin className="h-3.5 w-3.5 mr-1" />
+                                                    <span>
+                                                        {selectedUser.city ? `${selectedUser.city}, ` : ''}{selectedUser.province}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {selectedUser.details && (
+                                    <div>
+                                        <h5 className="text-sm font-semibold mb-2">Tentang</h5>
+                                        <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line bg-muted/40 rounded-xl p-4 border border-border/50">
+                                            {selectedUser.details}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col sm:flex-row gap-3 pt-2 w-full">
+                                    <a
+                                        href={selectedUser.linkedin}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold text-white bg-[#0077b5] hover:bg-[#006097] transition-colors shadow-sm"
+                                    >
+                                        <span className="font-bold text-lg leading-none">in</span>
+                                        Connect on LinkedIn
+                                    </a>
+                                    {selectedUser.portfolio && (
+                                        <Button asChild variant="outline" className="flex-1 h-11 rounded-xl shadow-sm">
+                                            <a href={selectedUser.portfolio} target="_blank" rel="noopener noreferrer">
+                                                <ExternalLink className="mr-2 h-4 w-4" /> Lihat Portfolio
+                                            </a>
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
