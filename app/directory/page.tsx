@@ -1,5 +1,4 @@
 'use client';
-export const runtime = 'edge';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getFreelancers } from '@/app/actions';

@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import AuthButton from '@/components/AuthButton'
 
+export const runtime = 'edge';
+
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
