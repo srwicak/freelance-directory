@@ -2,8 +2,17 @@
 import { tursoQuery, tursoExecute } from '@/lib/db';
 import { encrypt, decrypt, encryptFields, decryptFields } from '@/lib/encryption';
 import { revalidatePath } from 'next/cache';
-import { nanoid } from 'nanoid';
-
+// Manual ID generator instead of 'nanoid' package for better Edge compatibility
+function nanoid(length = 10): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars[array[i] % chars.length];
+    }
+    return result;
+}
 // Fields that should be encrypted in the database
 const ENCRYPTED_FIELDS = ['name', 'details', 'portfolio', 'linkedin'] as const;
 

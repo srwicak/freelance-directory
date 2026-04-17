@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import * as serverActions from '@/lib/server-actions';
 import { NextRequest } from 'next/server';
 
