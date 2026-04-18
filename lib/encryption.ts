@@ -1,8 +1,6 @@
 // Encryption module using Web Crypto API — compatible with Cloudflare Workers / Edge Runtime
 // Uses AES-256-GCM for authenticated encryption
 
-import { getRequestContext } from '@cloudflare/next-on-pages';
-
 const ALGORITHM = 'AES-GCM';
 const IV_LENGTH = 12; // 12 bytes is recommended for AES-GCM
 const KEY_LENGTH = 256; // bits
@@ -40,16 +38,7 @@ function bytesToString(bytes: Uint8Array): string {
 
 // Get ENCRYPTION_KEY from env
 function getRawKey(): string {
-    let key = process.env.ENCRYPTION_KEY;
-
-    try {
-        const context = getRequestContext();
-        if (context?.env) {
-            key = (context.env as any).ENCRYPTION_KEY || key;
-        }
-    } catch (e) {
-        // Not in Cloudflare context
-    }
+    const key = process.env.ENCRYPTION_KEY;
 
     if (!key) {
         throw new Error('ENCRYPTION_KEY is not defined in environment variables');

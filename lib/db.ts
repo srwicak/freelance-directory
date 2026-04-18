@@ -1,22 +1,9 @@
 // Minimal Turso HTTP client using raw fetch — no @libsql/client, no drizzle
 // This ensures zero XMLHttpRequest dependencies for Cloudflare Workers
 
-import { getRequestContext } from '@cloudflare/next-on-pages';
-
 function getConfig() {
-    let url = process.env.TURSO_DATABASE_URL;
-    let authToken = process.env.TURSO_AUTH_TOKEN;
-
-    // Try to get from Cloudflare context
-    try {
-        const context = getRequestContext();
-        if (context?.env) {
-            url = (context.env as any).TURSO_DATABASE_URL || url;
-            authToken = (context.env as any).TURSO_AUTH_TOKEN || authToken;
-        }
-    } catch (e) {
-        // Not in Cloudflare context
-    }
+    const url = process.env.TURSO_DATABASE_URL;
+    const authToken = process.env.TURSO_AUTH_TOKEN;
 
     if (!url) {
         throw new Error('TURSO_DATABASE_URL is not set.');
