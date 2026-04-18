@@ -374,8 +374,9 @@ export async function getOpportunityById(id: string) {
         row.author_linkedin = await decrypt(row.author_linkedin as string);
 
         return { success: true, data: row };
-    } catch (error) {
-        return { success: false, error: 'Gagal mengambil data post.' };
+    } catch (error: any) {
+        console.error('[getOpportunityById]', error);
+        return { success: false, error: error?.message || String(error) };
     }
 }
 

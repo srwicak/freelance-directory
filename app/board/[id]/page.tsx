@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { useState, useEffect } from 'react';
 import { getOpportunityById, voteOpportunity, deleteOpportunity, getUserVote } from '@/app/actions';
 import { Button } from '@/components/ui/button';
