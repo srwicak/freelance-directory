@@ -38,14 +38,14 @@ function bytesToString(bytes: Uint8Array): string {
 
 // Get ENCRYPTION_KEY from env
 function getRawKey(): string {
-    const key = process.env.ENCRYPTION_KEY;
+    const raw = process.env.ENCRYPTION_KEY;
 
-    if (!key) {
+    if (!raw) {
         throw new Error('ENCRYPTION_KEY is not defined in environment variables');
     }
 
     // Strip quotes if present (some .env parsers leave them)
-    key = key.replace(/^["']|["']$/g, '');
+    const key = raw.replace(/^["']|["']$/g, '');
 
     return key;
 }
